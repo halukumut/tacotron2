@@ -16,6 +16,14 @@ from loss_function import Tacotron2Loss
 from logger import Tacotron2Logger
 from hparams import create_hparams
 
+def get_device():
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print("CUDA available. Using GPU.")
+    else:
+        device = torch.device("cpu")
+        print("CUDA not available. Using CPU.")
+    return device
 
 def reduce_tensor(tensor, n_gpus):
     rt = tensor.clone()
@@ -69,7 +77,11 @@ def prepare_directories_and_logger(output_directory, log_directory, rank):
         logger = None
     return logger
 
+def load_model(hparams, device):
+    model = Tacotron2(hparams).to(device)
+    return model
 
+"""
 def load_model(hparams):
     model = Tacotron2(hparams).cuda()
     if hparams.fp16_run:
@@ -79,7 +91,7 @@ def load_model(hparams):
         model = apply_gradient_allreduce(model)
 
     return model
-
+"""
 
 def warm_start_model(checkpoint_path, model, ignore_layers):
     assert os.path.isfile(checkpoint_path)
@@ -165,7 +177,7 @@ def train(output_directory, log_directory, checkpoint_path, warm_start, n_gpus,
     torch.manual_seed(hparams.seed)
     torch.cuda.manual_seed(hparams.seed)
 
-    model = load_model(hparams)
+    model = load_model(hparams, get_device())
     learning_rate = hparams.learning_rate
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate,
                                  weight_decay=hparams.weight_decay)
@@ -276,6 +288,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     hparams = create_hparams(args.hparams)
+
+    device = get_device()
+    model = load_model(hparams, device)
 
     torch.backends.cudnn.enabled = hparams.cudnn_enabled
     torch.backends.cudnn.benchmark = hparams.cudnn_benchmark

@@ -1,11 +1,32 @@
 import tensorflow as tf
 from text import symbols
+import logging
 
+class HParams:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+    def parse(self, hparams_string):
+        for key_value in hparams_string.split(','):
+            key, value = key_value.split('=')
+            if hasattr(self, key):
+                setattr(self, key, self._parse_value(value))
+            else:
+                raise ValueError(f"Unknown hyperparameter: {key}")
+
+    def _parse_value(self, value):
+        try:
+            return eval(value)
+        except:
+            return value
+
+    def values(self):
+        return self.__dict__
 
 def create_hparams(hparams_string=None, verbose=False):
     """Create model hyperparameters. Parse nondefault from given string."""
 
-    hparams = tf.contrib.training.HParams(
+    hparams = HParams(
         ################################
         # Experiment Parameters        #
         ################################

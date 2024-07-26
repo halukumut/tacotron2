@@ -5,9 +5,10 @@ import torch
 
 def get_mask_from_lengths(lengths):
     max_len = torch.max(lengths).item()
-    ids = torch.arange(0, max_len, out=torch.cuda.LongTensor(max_len))
+    ids = torch.arange(0, max_len, dtype=torch.long)  # Use torch.long for CPU tensor
     mask = (ids < lengths.unsqueeze(1)).bool()
     return mask
+
 
 
 def load_wav_to_torch(full_path):
